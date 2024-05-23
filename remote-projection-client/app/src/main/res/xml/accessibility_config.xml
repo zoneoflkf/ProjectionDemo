@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeAllMask"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagDefault|flagRetrieveInteractiveWindows|flagIncludeNotImportantViews|flagReportViewIds"
+    android:canPerformGestures="true"
+    android:canRetrieveWindowContent="true"
+    android:description="@string/description_in_xml"
+    android:notificationTimeout="100" />
+
+    <!--android:description 此属性是在无障碍服务启用页面的描述
+
+    android:packageNames  此属性代表你需要那些应用支持无障碍服务，如果什么都不填删除此属性则代表你想监听设备的全部应用
+
+    android:accessibilityEventTypes 事件类型AccessibilityService服务响应的事件类型,只有声明了的类型,系统才会调用该服务的onAccessibilityEvent，有以下几个事件类型提供选择：
+
+    　　typeViewClicked  点击事件 | typeViewSelected  View被选择 | typeViewScrolled   滑动事件 | typeWindowContentChanged   窗口内容该表 | typeAllMask   所有事件
+
+    android:accessibilityFeedbackType 反馈类型
+
+    　　feedbackSpoken 语音反馈 | feedbackHaptic 触觉(震动)反馈 | feedbackAudible 音频反馈 | feedbackVisual 视频反馈 | feedbackGeneric 通用反馈  | feedbackAllMask 以上都具有
+
+    android:accessibilityFlags 额外声明
+    　　flagDefault 默认
+
+    　　flagIncludeNotImportantViews
+
+    　　flagRequestTouchExplorationMode  允许获得触控信息，另外你还需要将android:canRequestTouchExplorationMode  属性设置为true。 请注意！此属性有一定的危险，添加此属性后有可能导致触控失效(触发条件可能是需要插入鼠标或者其他外置设备)
+
+    　　flagRequestEnhancedWebAccessibility  允许获取Web地址信息，另外你还需要将 android:canRequestEnhancedWebAccessibility   属性设置为true
+
+    　　flagReportViewIds 允许获得view id,需要获取viewid的时候需要该参数,开始没声明导致nodeInfo. getViewIdResourceName()返回的为null
+
+    　　flagRequestFilterKeyEvents  此事件添加后才能在服务的onKeyEvent方法里输出当前按键键值，另外你还需要将 android:canRequestFilterKeyEvents 属性设置为true
+
+    　　flagRetrieveInteractiveWindows 允许获得windows,使用getWindows时需要该参数,否则会返回空列表
+
+    android:canRetrieveWindowContent 设置为“true”表示允许获取屏幕信息,使用getWindows、getRootInActiveWindow等函数时需要为“true”
+
+    android:canRequestTouchExplorationMode  设置为“true”表示允许获取触摸信息
+
+    android:canRequestEnhancedWebAccessibility  设置为“true”表示允许获取Web地址访问信息
+
+    android:canRequestFilterKeyEvents  设置为“true”表示允许获取按键信息
+
+    android:canRequestFingerprintGestures  设置为“true”表示允许获取手势信息
+
+    android:canControlMagnification 设置为“true”表示允许获取缩放信息
+    android:notificationTimeout  同一种事件类型触发的最短时间间隔(毫秒)-->

@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">投屏</string>
+    <string name="online_device_display_info">%1$s | %2$s | %3$d</string>
+    <string name="description_in_xml">无障碍测试</string>
+</resources>

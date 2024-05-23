@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package remotecontrol;
+
+option java_multiple_files = false;
+option java_package = "com.lkf.remotecontrol.models";
+option java_outer_classname = "BytesMessageProto";
+
+enum Type{
+  VIDEO_STREAM = 0;
+  TOUCH_INPUT = 1;
+}
+
+message BytesMessage{
+  Type type = 1;
+  bytes data = 2;
+}
+
+message VideoStream{
+  int64 deviceId = 1;
+  bytes data = 2;
+}
+
+message TouchInputs{
+  int64 deviceId = 1;
+  repeated MotionEvent motionEvents = 2;
+}
+
+message MotionEvent{
+  float xAxis = 1;
+  float yAxis = 2;
+  int32 action = 3;
+  int64 timestamp = 4;
+}
