@@ -11,6 +11,8 @@
 # 【客户端】
 IP和端口号定义在ServerConfig类，注意改成自己的服务端IP和端口号。
 
+客户端分控制端和受控端，Demo为了开发方便，使用的是同一个Module，要更改为控制端/受控端，直接修改 ProjectionAppConfigs.IS_CONTROLLED 属性即可，详细说明看代码注释。
+
 ProjectionConfigs类中定义了投屏的参数，包括投屏最大尺寸限制，投屏帧率，以及推流的编码格式（默认为video/hevc，即H.265），详情参见源码。
 
 
