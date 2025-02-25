@@ -1,24 +1,27 @@
 package com.lkf.remotecontrol.utils
 
 import android.accessibilityservice.AccessibilityServiceInfo
-import android.app.KeyguardManager
+import android.app.AlarmManager
+import android.app.Application
+import android.app.PendingIntent
 import android.app.Service
 import android.content.ComponentName
 import android.content.Context
-import android.content.Context.KEYGUARD_SERVICE
 import android.content.Intent
 import android.graphics.Point
-import android.net.ConnectivityManager
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Build.VERSION
-import android.os.PowerManager
 import android.provider.Settings
 import android.util.Log
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityManager
+import android.widget.Toast
+import com.lkf.remotecontrol.AlarmReceiver
 import com.lkf.remotecontrol.ControllerAbService
 import com.lkf.remotecontrol.ProjectionApp
+import com.lkf.remotecontrol.constants.ProjectionAppConfigs.ACTION_KEEP_ALIVE
+import com.lkf.remotecontrol.constants.ProjectionAppConfigs.WAKE_UP_INTERVAL_MS
 import java.net.Inet4Address
 import java.net.NetworkInterface
 import java.net.SocketException
@@ -53,7 +56,7 @@ object DeviceUtil {
         }
     }
 
-    fun getIpAddress(): String? {
+    /*fun getIpAddress(): String? {
         val context = ProjectionApp.instance
         val conMann = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val mobileNetworkInfo = conMann.getNetworkInfo(ConnectivityManager.TYPE_MOBILE)
@@ -64,7 +67,7 @@ object DeviceUtil {
             return getWifiAddress(context)
         }
         return ""
-    }
+    }*/
 
     private fun getLocalIpAddress(): String? {
         try {
@@ -121,13 +124,32 @@ object DeviceUtil {
         )
     }
 
-    fun wakeUpAndUnlock() {
+    fun wakeupByAlarm(context: Context) {
+        val alarmManager = context.getSystemService(Application.ALARM_SERVICE) as AlarmManager
+
+        if (VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (!alarmManager.canScheduleExactAlarms()) {
+                Toast.makeText(context, "需要闹钟权限", Toast.LENGTH_SHORT).show()
+                context.startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM))
+                return
+            }
+        }
+
+        // 设置闹钟 (允许低电量唤醒设备)
+        val triggerAtMillis = System.currentTimeMillis() + WAKE_UP_INTERVAL_MS
+
+        val intent = Intent(context, AlarmReceiver::class.java).setAction(ACTION_KEEP_ALIVE)
+        val pendingIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+
+        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+    }
+
+    /*fun wakeUpAndUnlock() {
         runCatching {
             // 获取电源管理器对象
             val context = ProjectionApp.instance
             val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
-            val screenOn = pm.isScreenOn
-            if (!screenOn) {
+            if (!pm.isInteractive) {
                 // 获取PowerManager.WakeLock对象,后面的参数|表示同时传入两个值,最后的是LogCat里用的Tag
                 val wl = pm.newWakeLock(
                     PowerManager.ACQUIRE_CAUSES_WAKEUP or
@@ -145,5 +167,5 @@ object DeviceUtil {
         }.onFailure {
             Log.w(TAG, "wakeUpAndUnlock: failed", it)
         }
-    }
+    }*/
 }

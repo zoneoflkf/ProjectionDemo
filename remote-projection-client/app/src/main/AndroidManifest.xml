@@ -10,6 +10,9 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+
 
     <application
         android:name=".ProjectionApp"
@@ -35,6 +38,7 @@
 
         <activity
             android:name=".StartProjectionActivity"
+            android:turnScreenOn="true"
             android:showOnLockScreen="true"
             android:showWhenLocked="true"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
@@ -71,6 +75,15 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".AlarmReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
+                <action android:name="com.lkf.remotecontrol.KeepAlive" />
             </intent-filter>
         </receiver>
     </application>

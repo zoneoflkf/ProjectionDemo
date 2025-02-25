@@ -18,7 +18,6 @@ import org.java_websocket.drafts.Draft_6455
 import org.java_websocket.handshake.ServerHandshake
 import java.net.URI
 import java.nio.ByteBuffer
-import java.util.concurrent.TimeUnit
 import kotlin.math.max
 import kotlin.math.min
 
@@ -189,10 +188,10 @@ open class ProjectionClient(serverUri: URI?, connectTimeout: Int) : WebSocketCli
         runCatching { super.send(bytes) }.onFailure { Log.e(TAG, "send: $bytes", it) }
     }
 
-    @Throws(InterruptedException::class)
+    /*@Throws(InterruptedException::class)
     fun reconnectBlocking(timeout: Long, timeUnit: TimeUnit): Boolean {
         val reset = WebSocketClient::class.java.getDeclaredMethod("reset").apply { isAccessible = true }
         reset.invoke(this)
         return connectBlocking(timeout, timeUnit)
-    }
+    }*/
 }

@@ -62,6 +62,10 @@ class OnlineDeviceActivity : ComponentActivity(), SimpleNetMessageReceiver {
 
     override fun onDeviceListMessage(devices: List<OnlineDevice>) {
         lifecycleScope.launch(Dispatchers.Main) {
+            // 过滤出华为设备
+            /*val devices = devices.filter {
+                it.deviceName?.lowercase()?.contains("huawei") == true
+            }*/
             devicesAdapter?.submitList(devices)
             if (devices.isEmpty()) {
                 Toast.makeText(this@OnlineDeviceActivity, "无在线设备", Toast.LENGTH_SHORT).show()

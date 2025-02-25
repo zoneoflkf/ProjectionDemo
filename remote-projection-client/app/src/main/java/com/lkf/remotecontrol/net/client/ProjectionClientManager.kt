@@ -2,13 +2,13 @@ package com.lkf.remotecontrol.net.client
 
 import android.util.Log
 import com.lkf.remotecontrol.net.constants.ServerConfig
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.java_websocket.handshake.ServerHandshake
 import java.net.URI
-import java.util.concurrent.TimeUnit
 
 object ProjectionClientManager {
     private const val TAG = "ProjectionClientManager"
@@ -18,7 +18,7 @@ object ProjectionClientManager {
         }
 
     private val realClient by lazy { return@lazy InnerProjectionClient() }
-    private val scope: CoroutineScope by lazy { CoroutineScope(Dispatchers.Default) }
+    private val scope = GlobalScope
     private const val CONNECT_TIMEOUT: Long = 10_000
     private const val DETECT_INTERVAL: Long = 5000
     private const val RECONNECT_INTERVAL: Long = 3000
@@ -31,21 +31,24 @@ object ProjectionClientManager {
     }
 
     private fun startClientDamon() {
-        scope.launch(Dispatchers.IO) {
+        scope.launch(Dispatchers.Main) {
             delay(CONNECT_TIMEOUT)
+
             while (true) {
-                if (client.isOpen) {
-//                    Log.d(TAG, "startClientDamon: 服务正常")
+                if (realClient.isOpenEx()) {
+                    //Log.d(TAG, "startClientDamon: Service connecting")
                     delay(DETECT_INTERVAL)
                     continue
                 }
-                Log.w(TAG, "startClientDamon: 服务未连接,重试...")
-                runCatching {
-                    realClient.reconnectWithCurUri()
-                }.onSuccess {
-                    if (it) Log.d(TAG, "startClientDamon: 连接成功!!!")
-                    else delay(RECONNECT_INTERVAL)
-                }.onFailure { delay(RECONNECT_INTERVAL) }
+                withContext(Dispatchers.Default) {
+                    Log.w(TAG, "startClientDamon: Service not connect, retrying...")
+                    runCatching {
+                        realClient.reconnectWithCurUri()
+                    }.onSuccess {
+                        if (it) Log.d(TAG, "startClientDamon: connect OK !!!")
+                        else delay(RECONNECT_INTERVAL)
+                    }.onFailure { delay(RECONNECT_INTERVAL) }
+                }
             }
         }
     }
@@ -55,24 +58,35 @@ object ProjectionClientManager {
     }
 
     private class InnerProjectionClient : ProjectionClient(getUri(), CONNECT_TIMEOUT.toInt()) {
+        private var isClose = false
+        private var isError = false
+
         override fun onOpen(handshakedata: ServerHandshake?) {
+            isClose = false
+            isError = false
             super.onOpen(handshakedata)
             clientStateListeners.forEach { it.onOpen(this) }
         }
 
         override fun onClose(code: Int, reason: String?, remote: Boolean) {
+            isClose = true
             super.onClose(code, reason, remote)
             clientStateListeners.forEach { it.onClose(this) }
         }
 
         override fun onError(ex: Exception?) {
+            isError = true
             super.onError(ex)
             clientStateListeners.forEach { it.onError(this, ex) }
         }
 
         fun reconnectWithCurUri(): Boolean {
             uri = getUri()
-            return reconnectBlocking(CONNECT_TIMEOUT, TimeUnit.MILLISECONDS)
+            return reconnectBlocking()
+        }
+
+        fun isOpenEx(): Boolean {
+            return isOpen && !isClose && !isError
         }
     }
 }

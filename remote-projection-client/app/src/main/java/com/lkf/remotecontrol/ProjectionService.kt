@@ -7,10 +7,12 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Icon
 import android.media.projection.MediaProjectionManager
 import android.os.IBinder
+import android.os.PowerManager
 import android.util.Log
 import android.view.Gravity
 import android.view.SurfaceHolder
@@ -35,6 +37,7 @@ class ProjectionService : Service(), SimpleNetMessageReceiver {
         const val EXTRA_WIDTH = "width"
         const val EXTRA_HEIGHT = "height"
         const val EXTRA_STOP_PROJECTION = "stopProjection"
+        const val EXTRA_KEEP_ALIVE = "keepAlive"
 
         private const val TAG: String = "ProjectionService"
         private const val NOTIFICATION_ID = 1
@@ -52,10 +55,11 @@ class ProjectionService : Service(), SimpleNetMessageReceiver {
 
     override fun onCreate() {
         super.onCreate()
+        acquireWakeLock()
         createNotificationChannel()
         startForeground(NOTIFICATION_ID, createNotification())
         ProjectionClientManager.client.messageReceivers.add(this)
-        showFloating()
+        //showFloating()
     }
 
     private fun createNotificationChannel() {
@@ -75,18 +79,22 @@ class ProjectionService : Service(), SimpleNetMessageReceiver {
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        if (intent.getBooleanExtra(EXTRA_STOP_PROJECTION, false)) {
-            Log.i(TAG, "onStartCommand: 停止投屏命令")
-            stopProjection()
+        if (intent.getBooleanExtra(EXTRA_KEEP_ALIVE, false)) {
+            Log.d(TAG, "onStartCommand: KEEP_ALIVE")
         } else {
-            val resultCode = intent.getIntExtra("resultCode", Int.MIN_VALUE)
-            val data = intent.getParcelableExtra<Intent>("data")
-            if (resultCode == Activity.RESULT_OK && data != null) {
-                val width = intent.getIntExtra(EXTRA_WIDTH, 480)
-                val height = intent.getIntExtra(EXTRA_HEIGHT, 800)
-                startProjection(resultCode, data, width, height)
+            if (intent.getBooleanExtra(EXTRA_STOP_PROJECTION, false)) {
+                Log.i(TAG, "onStartCommand: 停止投屏命令")
+                stopProjection()
             } else {
-                Log.w(TAG, "onStartCommand: 无投屏参数 -> resultCode:$resultCode | data:${data?.extras.toKvString()}")
+                val resultCode = intent.getIntExtra("resultCode", Int.MIN_VALUE)
+                val data = intent.getParcelableExtra<Intent>("data")
+                if (resultCode == Activity.RESULT_OK && data != null) {
+                    val width = intent.getIntExtra(EXTRA_WIDTH, 480)
+                    val height = intent.getIntExtra(EXTRA_HEIGHT, 800)
+                    startProjection(resultCode, data, width, height)
+                } else {
+                    Log.w(TAG, "onStartCommand: 无投屏参数 -> resultCode:$resultCode | data:${data?.extras.toKvString()}")
+                }
             }
         }
         return START_STICKY
@@ -108,6 +116,8 @@ class ProjectionService : Service(), SimpleNetMessageReceiver {
 
         projectionWidth = width
         projectionHeight = height
+
+        Log.i(TAG, "startProjection: -> size: [$width x $height]")
 
         ProjectionEncoder(mp, width, height) { encodedData ->
             //Log.d(TAG, "onEncoded -> sz:${encodedData.size} | data:${encodedData.contentToString()}")
@@ -158,7 +168,8 @@ class ProjectionService : Service(), SimpleNetMessageReceiver {
         super.onDestroy()
         stopProjection()
         ProjectionClientManager.client.messageReceivers.remove(this)
-        dismissFloating()
+        //dismissFloating()
+        releaseWakeLock()
     }
 
     override fun onBind(intent: Intent?): IBinder? {
@@ -198,28 +209,32 @@ class ProjectionService : Service(), SimpleNetMessageReceiver {
     private var keepAliveFloating: View? = null
 
     private fun showFloating() {
-        keepAliveFloating?.let { windowManager.removeView(it) }
-        View.inflate(this, R.layout.keepalive_floating, null).also {
-            keepAliveFloating = it
-            it.setOnTouchListener(DragFloatingTouchListener())
-            /*val w: Int = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 40f, resources.displayMetrics).toInt()
-            val h: Int = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 40f, resources.displayMetrics).toInt()*/
-            val w = 1
-            val h = 1
-            windowManager.addView(it, WindowManager.LayoutParams().apply {
-                x = 0
-                y = 0
-                width = w
-                height = h
-                gravity = Gravity.START or Gravity.TOP
-                type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-                flags = flags or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-            })
+        runCatching {
+            keepAliveFloating?.let { windowManager.removeView(it) }
+            View.inflate(this, R.layout.keepalive_floating, null).also {
+                keepAliveFloating = it
+                it.setOnTouchListener(DragFloatingTouchListener())
+                /*val w: Int = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 40f, resources.displayMetrics).toInt()
+                val h: Int = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 40f, resources.displayMetrics).toInt()*/
+                val w = 1
+                val h = 1
+                windowManager.addView(it, WindowManager.LayoutParams().apply {
+                    x = 0
+                    y = 0
+                    width = w
+                    height = h
+                    gravity = Gravity.START or Gravity.TOP
+                    type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                    flags = flags or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                })
+            }
         }
     }
 
     private fun dismissFloating() {
-        keepAliveFloating?.let { windowManager.removeView(it) }
+        runCatching {
+            keepAliveFloating?.let { windowManager.removeView(it) }
+        }
     }
 
     private var projectionView: SurfaceView? = null
@@ -281,5 +296,18 @@ class ProjectionService : Service(), SimpleNetMessageReceiver {
     private fun dismissMyProjection() {
         projectionView?.let { windowManager.removeView(it) }
         projectionView = null
+    }
+
+    private val wakeLock by lazy {
+        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        return@lazy powerManager.newWakeLock(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK, "Projection:KeepAlive")
+    }
+
+    private fun acquireWakeLock() {
+        wakeLock.acquire();
+    }
+
+    private fun releaseWakeLock() {
+        wakeLock.release()
     }
 }

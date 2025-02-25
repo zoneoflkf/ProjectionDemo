@@ -3,6 +3,7 @@ package com.lkf.remotecontrol
 import android.app.Application
 import android.content.Intent
 import com.lkf.remotecontrol.constants.ProjectionAppConfigs.IS_CONTROLLED
+import com.lkf.remotecontrol.utils.DeviceUtil
 
 class ProjectionApp : Application() {
     companion object {
@@ -22,7 +23,8 @@ class ProjectionApp : Application() {
 
         if (IS_CONTROLLED) {
             startService(Intent(this, ProjectionService::class.java))
-            KeepAliveJobService.keepAlive(this)
+            //KeepAliveJobService.keepAlive(this)
+            DeviceUtil.wakeupByAlarm(this)
         }
     }
 

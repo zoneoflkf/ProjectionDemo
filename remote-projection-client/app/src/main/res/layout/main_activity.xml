@@ -30,4 +30,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="无障碍" />
+
+    <Button
+        android:id="@+id/btnBatteryOpt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="电池优化" />
 </LinearLayout>

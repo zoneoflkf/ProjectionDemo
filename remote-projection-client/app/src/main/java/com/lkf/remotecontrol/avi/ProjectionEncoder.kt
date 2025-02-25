@@ -5,6 +5,7 @@ import android.media.MediaCodec
 import android.media.projection.MediaProjection
 import android.os.Process
 import android.util.Log
+import com.lkf.remotecontrol.ProjectionApp
 import com.lkf.remotecontrol.avi.ProjectionConfigs.MEDIACODEC_TIME_OUT
 import com.lkf.remotecontrol.avi.ProjectionConfigs.PROJECTION_VIDEO_TYPE
 import java.io.IOException
@@ -22,9 +23,15 @@ class ProjectionEncoder(
     init {
         try {
             mediaCodec = MediaCodec.createEncoderByType(PROJECTION_VIDEO_TYPE)
+
             mediaCodec.configure(ProjectionConfigs.getMediaFormat(width, height), null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
-            val surface = mediaCodec.createInputSurface()
-            mediaProjection.createVirtualDisplay("Projection", width, height, 160, DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC, surface, null, null)
+
+            mediaProjection.createVirtualDisplay(
+                "Projection", width, height,
+                ProjectionApp.instance.resources.displayMetrics.densityDpi,
+                DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION,
+                mediaCodec.createInputSurface(), null, null
+            )
         } catch (e: IOException) {
             e.printStackTrace()
         }
@@ -35,6 +42,9 @@ class ProjectionEncoder(
     fun startEncoding() {
         encodeThread = Thread {
             Process.setThreadPriority(Process.THREAD_PRIORITY_DISPLAY)
+
+            val frameInterval: Long = (1f / ProjectionConfigs.PROJECTION_FPS * 1000).toLong()
+
             try {
                 mediaCodec.start()
                 val bufferInfo = MediaCodec.BufferInfo()
@@ -47,6 +57,8 @@ class ProjectionEncoder(
                         onEncoded(it)
                     }
                     mediaCodec.releaseOutputBuffer(outputBufIndex, false)
+
+                    Thread.sleep(frameInterval)
                 }
             } catch (e: Throwable) {
                 Log.w(TAG, "startEncoding: Interrupt", e)

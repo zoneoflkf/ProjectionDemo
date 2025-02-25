@@ -30,9 +30,6 @@ class StartProjectionActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setTurnScreenOn(true)
-        setShowWhenLocked(true)
-
         if (checkSelfPermission(Manifest.permission.FOREGROUND_SERVICE) != PackageManager.PERMISSION_GRANTED) {
             Toast.makeText(this, "需要开启前台服务权限", Toast.LENGTH_SHORT).show()
             requestPermissions(arrayOf(Manifest.permission.FOREGROUND_SERVICE), REQUEST_PERMISSION_FOREGROUND_SERVICE)
