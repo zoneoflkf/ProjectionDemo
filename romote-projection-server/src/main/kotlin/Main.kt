@@ -3,13 +3,20 @@ import com.lkf.remotecontrol.net.server.ProjectionServer
 import java.net.InetSocketAddress
 
 fun main() {
-    startServer()
-    while (true) {
-        Thread.sleep(Long.MAX_VALUE)
-    }
-}
+    val updateTime = "2024-6-5 17:24:49"
+    println("Server start updateTime: $updateTime")
 
-private fun startServer() {
     val address = InetSocketAddress(ServerConfig.PORT)
-    ProjectionServer(address).apply { start() }
+    var server = ProjectionServer(address).apply { start() }
+    while (true) {
+        runCatching {
+            if (server.isError) {
+                server.stop(3000, "Stop from error")
+                println("Server error, restart...")
+                server = ProjectionServer(address).apply { start() }
+            } else {
+                Thread.sleep(5000)
+            }
+        }
+    }
 }

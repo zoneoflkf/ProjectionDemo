@@ -242,8 +242,11 @@ open class ProjectionServer(address: InetSocketAddress?) : WebSocketServer(addre
         }
     }
 
+    var isError = false
+
     override fun onError(conn: WebSocket?, ex: Exception?) {
         logE("onError -> conn:{${conn.toHostString()}}", ex)
+        isError = true
     }
 
     /*fun sendData(data: ByteArray?) {
@@ -251,10 +254,6 @@ open class ProjectionServer(address: InetSocketAddress?) : WebSocketServer(addre
             viewer.send(data)
         }
     }*/
-
-    fun getWebSocketWorkers(): List<WebSocketWorker>? {
-        return decoders
-    }
 
     private fun logD(msg: String) {
         if (SHOW_DEBUG_LOG) println("${dateStr()} -- D -- $msg")
